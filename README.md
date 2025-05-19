@@ -190,15 +190,56 @@ For complete documentation, see the [docs folder](DOCS.md).
 
 ## Deployment
 
-### Server Deployment
-The server can be deployed to platforms like Render, Heroku, or any other Node.js hosting service:
+### Before Deployment
 
-1. Connect your GitHub repository to the hosting service
-2. Configure environment variables (MONGODB_URI, API_KEY, etc.)
-3. Deploy the application
+Before deploying the project, make sure to:
 
-### Dashboard Deployment
+1. **Ensure all code is committed** to your GitHub repository
+2. **Check environment variables** in your `.env` file are ready for production use
+3. **Test locally** to confirm everything works on your development machine
+4. **Review security settings** to ensure your API is properly secured
+
+### Server & Dashboard Deployment to Render
+
+The server and dashboard can be deployed to Render in a few simple steps:
+
+1. **Create a Render account** at [render.com](https://render.com/)
+2. **Connect your GitHub repository** to Render
+3. **Create a new Web Service** with these settings:
+   - Environment: `Node`
+   - Build Command: `cd Server && npm install`
+   - Start Command: `cd Server && node server.js`
+4. **Set up environment variables**:
+   - `MONGODB_URI`: Your MongoDB connection string
+   - `API_KEY`: Your API key for authentication
+   - `SERVER_URL`: Will be automatically set to your Render URL
+   - `PORT`: 10000 (or your preferred port)
+5. **Create the Web Service** and wait for deployment to complete
+
+Both the server API and dashboard will be deployed together, as the Express server serves the dashboard files.
+
+### After Deployment
+
+After successful deployment, you need to make these changes:
+
+1. **Update Android SDK/Example App**:
+   - Change `SERVER_URL` in `MainActivity.java` to your new Render URL:
+     ```java
+     private static final String SERVER_URL = "https://your-render-app-name.onrender.com/";
+     ```
+   - Rebuild the Android app with this updated URL
+
+2. **Verify Deployment**:
+   - Open your Render URL in a browser to check if the dashboard is working
+   - Test API endpoints using tools like Postman
+   - Test the Android app with the updated server URL
+
+3. **Monitor Usage**:
+   - Watch server logs in the Render dashboard for any errors
+   - Monitor MongoDB usage and performance
+
 The dashboard is served by the server and doesn't require separate deployment.
+
 
 ## Contributing
 
