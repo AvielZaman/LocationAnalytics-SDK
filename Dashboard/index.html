@@ -1,0 +1,147 @@
+<!-- Dashboard/index.html -->
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location Analytics Dashboard</title>
+    
+    <!-- Load CSS files -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <i class="fas fa-map-marker-alt"></i>
+            <h1>Location Analytics</h1>
+        </div>
+        <div class="user-controls">
+            <select id="user-select">
+                <option value="">Select User</option>
+                <!-- Will be populated dynamically -->
+            </select>
+            <div class="date-range">
+                <label for="start-date">From Date:</label>
+                <input type="date" id="start-date">
+                <label for="end-date">To Date:</label>
+                <input type="date" id="end-date">
+            </div>
+            <button id="refresh-btn" class="primary-btn">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <div class="dashboard-grid">
+            <!-- Stats Cards -->
+            <div class="card stats-card">
+                <h3>Statistics</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-icon"><i class="fas fa-user"></i></div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="total-users">-</span>
+                            <span class="stat-label">Users</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon"><i class="fas fa-map-marker"></i></div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="total-locations">-</span>
+                            <span class="stat-label">Locations</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon"><i class="fas fa-route"></i></div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="total-distance">-</span>
+                            <span class="stat-label">KM</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon"><i class="fas fa-stopwatch"></i></div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="active-hours">-</span>
+                            <span class="stat-label">Active Hours</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Card -->
+            <div class="card map-card">
+                <div class="card-header">
+                    <h3>Activity Map</h3>
+                    <div class="map-controls">
+                        <button id="heat-map-btn" class="toggle-btn active">
+                            <i class="fas fa-fire"></i> Heat Map
+                        </button>
+                        <button id="path-map-btn" class="toggle-btn">
+                            <i class="fas fa-route"></i> Path
+                        </button>
+                        <button id="stops-map-btn" class="toggle-btn">
+                            <i class="fas fa-map-pin"></i> Stops
+                        </button>
+                    </div>
+                </div>
+                <div id="map-container"></div>
+            </div>
+
+            <!-- Activity Hours Card -->
+            <div class="card chart-card">
+                <h3>Activity Hours</h3>
+                <div style="width:100%; height:90%; position:relative;">
+                    <canvas id="activity-hours-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- City Visits Card -->
+            <div class="card chart-card">
+                <h3>Visits by Area</h3>
+                <div style="width:100%; height:90%; position:relative;">
+                    <canvas id="city-visits-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Common Stops Card -->
+            <div class="card stops-card">
+                <h3>Common Stops</h3>
+                <div class="stops-list" id="stops-list">
+                    <!-- Will be populated dynamically -->
+                    <div class="loading-indicator">Loading data...</div>
+                </div>
+            </div>
+
+            <!-- Location Timeline Card -->
+            <div class="card timeline-card">
+                <h3>Activity Timeline</h3>
+                <div class="timeline-container" style="width:100%; height:90%; position:relative;">
+                    <canvas id="timeline-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>Location Analytics Dashboard © 2025</p>
+    </footer>
+
+    <!-- Load scripts in the correct order -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    
+    <!-- Simple load check for console debugging -->
+    <script>
+        console.log("Leaflet loaded:", typeof L !== 'undefined');
+        console.log("Leaflet.heat loaded:", typeof L !== 'undefined' && typeof L.heatLayer === 'function');
+        console.log("Chart.js loaded:", typeof Chart !== 'undefined');
+    </script>
+    
+    <!-- Load application code after libraries -->
+    <script type="module" src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,343 @@
+<!-- Dashboard/heatmap-standalone-db.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location Analytics Heatmap</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { width: 100%; height: 100vh; }
+        
+        .legend {
+            position: absolute;
+            bottom: 30px;
+            right: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            width: 250px;
+        }
+        
+        .gradient-bar {
+            height: 15px;
+            width: 100%;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            background: linear-gradient(to right, 
+                rgba(0, 0, 255, 0.7) 0%, 
+                rgba(0, 128, 255, 0.75) 20%,
+                rgba(0, 255, 255, 0.8) 40%,
+                rgba(0, 255, 0, 0.85) 60%,
+                rgba(255, 255, 0, 0.9) 70%,
+                rgba(255, 128, 0, 0.95) 80%,
+                rgba(255, 0, 0, 1.0) 100%
+            );
+        }
+        
+        .labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #555;
+        }
+
+        .back-button {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 8px 15px;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            text-decoration: none;
+            color: #333;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+        
+        .user-info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 8px 15px;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .date-info {
+            position: absolute;
+            top: 50px;
+            right: 10px;
+            background: white;
+            padding: 8px 15px;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        /* Loading indicator */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+        
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <a href="index.html" class="back-button" id="backButton">← Back to Dashboard</a>
+    <div class="user-info" id="userInfo">Loading...</div>
+    <div class="date-info" id="dateInfo">Loading date range...</div>
+    
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <div>Loading heatmap data...</div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
+    <script type="module">
+        // Import required modules
+        import { fetchLocations } from './modules/api.js';
+
+        // Define storage keys and user constants
+        const STORAGE_KEY_START_DATE = 'startDate';
+        const STORAGE_KEY_END_DATE = 'endDate';
+        const ALL_TEST_USERS = 'all_test_users';
+        const TEST_USER_ID = 'test_user';
+        const TEST_USER_SOUTH_ID = 'test_user_south';
+        
+        // Initialize map
+        const map = L.map('map').setView([32.0853, 34.7818], 13);
+        
+        // Add OpenStreetMap tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Helper function to get URL parameters
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            const results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        }
+        
+        // Helper function to format date to ISO string date part
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
+        }
+        
+        // Create the legend
+        function createLegend() {
+            const legend = document.createElement('div');
+            legend.className = 'legend';
+            legend.innerHTML = `
+                <h4 style="margin: 0 0 10px 0; font-size: 14px; text-align: center;">Activity Intensity</h4>
+                <div class="gradient-bar"></div>
+                <div class="labels">
+                    <span>Low</span>
+                    <span>Medium</span>
+                    <span>High</span>
+                </div>
+            `;
+            document.body.appendChild(legend);
+        }
+        
+        // Fix canvas for willReadFrequently warning
+        function fixCanvas() {
+            setTimeout(() => {
+                const canvases = document.querySelectorAll('canvas');
+                canvases.forEach(canvas => {
+                    canvas.willReadFrequently = true;
+                });
+            }, 100);
+        }
+        
+        // Main function to load and display heatmap data
+        async function initializeHeatmap() {
+            // Get the selected user from URL parameter
+            const selectedUser = getUrlParameter('user') || ALL_TEST_USERS;
+            console.log("Selected user from URL:", selectedUser);
+            
+            // Update user info display
+            const userInfo = document.getElementById('userInfo');
+            if (selectedUser === ALL_TEST_USERS) {
+                userInfo.textContent = "All Test Users";
+            } else if (selectedUser === TEST_USER_ID) {
+                userInfo.textContent = "Test User (North)";
+            } else if (selectedUser === TEST_USER_SOUTH_ID) {
+                userInfo.textContent = "Test User (South)";
+            } else {
+                userInfo.textContent = selectedUser;
+            }
+            
+            // Update back button to prevent reopening
+            const backButton = document.getElementById('backButton');
+            backButton.addEventListener('click', function(e) {
+                sessionStorage.setItem('preventHeatmapOpen', 'true');
+            });
+            
+            // Get date range from localStorage
+            let startDate = localStorage.getItem(STORAGE_KEY_START_DATE);
+            let endDate = localStorage.getItem(STORAGE_KEY_END_DATE);
+            
+            // Display the date range
+            const dateInfo = document.getElementById('dateInfo');
+            if (startDate && endDate) {
+                dateInfo.textContent = `Date range: ${startDate} to ${endDate}`;
+            } else {
+                // If no saved dates, use defaults
+                const end = new Date();
+                const start = new Date();
+                start.setDate(end.getDate() - 7);
+                
+                startDate = formatDate(start);
+                endDate = formatDate(end);
+                dateInfo.textContent = `Date range: ${startDate} to ${endDate} (default)`;
+            }
+            
+            try {
+                // Fetch data from database
+                const startTime = new Date(startDate).getTime();
+                const endTime = new Date(endDate).getTime() + (24 * 60 * 60 * 1000 - 1);
+                
+                console.log(`Fetching data from ${new Date(startTime).toISOString()} to ${new Date(endTime).toISOString()}`);
+                
+                // Fetch data for selected user
+                const filteredLocations = await fetchLocations(selectedUser, startTime, endTime);
+                
+                console.log(`Fetched ${filteredLocations.length} locations from database for user ${selectedUser}`);
+                
+                if (filteredLocations.length === 0) {
+                    document.getElementById('loading').innerHTML = '<div style="padding: 20px;">No data found for this date range</div>';
+                    setTimeout(() => {
+                        document.getElementById('loading').style.display = 'none';
+                    }, 3000);
+                    return;
+                }
+                
+                // Process data for heatmap
+                const uniqueLocations = {};
+                filteredLocations.forEach(loc => {
+                    if (loc && loc.latitude && loc.longitude) {
+                        // Create a key with reduced precision for clustering
+                        const key = `${parseFloat(loc.latitude).toFixed(4)},${parseFloat(loc.longitude).toFixed(4)}`;
+                        if (!uniqueLocations[key]) {
+                            uniqueLocations[key] = {
+                                lat: parseFloat(loc.latitude),
+                                lng: parseFloat(loc.longitude),
+                                count: 0
+                            };
+                        }
+                        uniqueLocations[key].count++;
+                    }
+                });
+                
+                // Convert to array and apply wave-like intensity variation
+                const heatData = Object.values(uniqueLocations).map(loc => {
+                    // Apply non-linear scaling to enhance visualization
+                    let intensity = Math.min(25, 5 + Math.sqrt(loc.count) * 3);
+                    
+                    // Add small random variations to create more organic look
+                    const variation = (Math.random() * 0.3) + 0.85;
+                    intensity *= variation;
+                    
+                    return [loc.lat, loc.lng, intensity];
+                });
+                
+                console.log(`Prepared ${heatData.length} heatmap points with wave-like effect`);
+                
+                // Hide loading indicator
+                document.getElementById('loading').style.display = 'none';
+                
+                if (heatData.length > 0) {
+                    // Calculate bounds for the data
+                    const points = heatData.map(point => [point[0], point[1]]);
+                    const bounds = L.latLngBounds(points);
+                    
+                    // Add a small delay to ensure the DOM is ready
+                    setTimeout(() => {
+                        try {
+                            // Create heatmap layer with weather forecast-style settings
+                            const heat = L.heatLayer(heatData, {
+                                radius: 35,
+                                blur: 40,
+                                maxZoom: 18,
+                                max: 0.6,
+                                minOpacity: 0.4,
+                                gradient: {
+                                    0.0: 'rgba(0, 0, 255, 0.7)',
+                                    0.2: 'rgba(0, 128, 255, 0.75)',
+                                    0.4: 'rgba(0, 255, 255, 0.8)',
+                                    0.6: 'rgba(0, 255, 0, 0.85)',
+                                    0.7: 'rgba(255, 255, 0, 0.9)',
+                                    0.8: 'rgba(255, 128, 0, 0.95)',
+                                    1.0: 'rgba(255, 0, 0, 1.0)'
+                                }
+                            }).addTo(map);
+                            
+                            console.log("Weather-style heatmap added to map");
+                            
+                            // Set zoom and bounds
+                            map.fitBounds(bounds, { padding: [50, 50] });
+                            
+                            // Add legend and fix canvas
+                            createLegend();
+                            fixCanvas();
+                        } catch (err) {
+                            console.error("Error creating heatmap:", err);
+                            alert("Error creating heatmap: " + err.message);
+                        }
+                    }, 500);
+                } else {
+                    console.error("No valid heatmap data points available");
+                    alert("No valid heatmap data available");
+                }
+            } catch (err) {
+                console.error("Error fetching data from database:", err);
+                alert("Error fetching data: " + err.message);
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        
+        // Start the application
+        initializeHeatmap();
+    </script>
+</body>
+</html>
