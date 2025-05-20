@@ -1,5 +1,6 @@
 plugins {
-    id("com.android.library")
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.maven.publish)
 }
 
 android {
@@ -42,4 +43,19 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
     implementation(libs.gson)
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            create<MavenPublication>("release") {
+                groupId = "com.github.AvielZaman" // Change as needed
+                artifactId = "locationanalyticssdk" // Change as needed
+                version = "1.0.0" // Change as needed
+                artifact(tasks.getByName("bundleReleaseAar"))
+
+                // Add dependencies to the Maven publication configuration (api or implementation)
+            }
+        }
+    }
 }
