@@ -51,7 +51,7 @@ afterEvaluate {
             create<MavenPublication>("release") {
                 groupId = "com.github.AvielZaman" // Change as needed
                 artifactId = "locationanalyticssdk" // Change as needed
-                version = "1.00.01" // Change as needed
+                version = "1.00.02" // Change as needed
                 artifact(tasks.getByName("bundleReleaseAar"))
 
                 // Add dependencies to the Maven publication configuration (api or implementation)
