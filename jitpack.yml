@@ -1,4 +1,3 @@
-@"
 jdk:
   - openjdk17
 
@@ -6,5 +5,4 @@ before_install:
   - chmod +x gradlew
 
 install:
-  - ./gradlew :locationanalyticssdk:publishToMavenLocal -xtest
-"@ | Out-File -FilePath "jitpack.yml" -Encoding utf8
+  - ./gradlew :locationanalyticssdk:publishToMavenLocal -x test -x lint -x lintVitalRelease
