@@ -1,15 +1,84 @@
-*.iml
-.gradle
+# Build outputs
+build/
+/build/
+**/build/
+/captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.dex
+*.class
+
+# Gradle files
+.gradle/
 /local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
 local.properties
+
+# IntelliJ/Android Studio
+*.iml
+.idea/
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+.idea/tasks.xml
+.idea/gradle.xml
+.idea/dictionaries/
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Node.js
+/Server/node_modules/
+Server/node_modules/
+node_modules/
+**/node_modules/
+npm-debug.log
+npm-debug.log*
+yarn-debug.log
+yarn-debug.log*
+yarn-error.log
+yarn-error.log*
+.npm
+package-lock.json
+yarn.lock
+
+# Environment variables
+.env
+**/.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# MongoDB
+/data/db/
+
+# Logs
+logs
+*.log
+
+# Temporary files
+.tmp
+.temp
+tmp/
+temp/
+*.tmp
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
