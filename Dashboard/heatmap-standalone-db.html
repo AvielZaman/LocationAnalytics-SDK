@@ -1,4 +1,3 @@
-<!-- Dashboard/heatmap-standalone-db.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -135,12 +134,10 @@
         // Import required modules
         import { fetchLocations } from './modules/api.js';
 
-        // Define storage keys and user constants
+        // Define storage keys and constants
         const STORAGE_KEY_START_DATE = 'startDate';
         const STORAGE_KEY_END_DATE = 'endDate';
         const ALL_TEST_USERS = 'all_test_users';
-        const TEST_USER_ID = 'test_user';
-        const TEST_USER_SOUTH_ID = 'test_user_south';
         
         // Initialize map
         const map = L.map('map').setView([32.0853, 34.7818], 13);
@@ -161,6 +158,26 @@
         // Helper function to format date to ISO string date part
         function formatDate(date) {
             return date.toISOString().split('T')[0];
+        }
+        
+        // Create friendly display name from user_id
+        function createDisplayName(userId) {
+            if (userId === ALL_TEST_USERS) {
+                return "All Test Users";
+            }
+            
+            // Convert user_id to friendly display name
+            let displayName = userId
+                .replace(/test_user_?/, '')
+                .replace(/_/g, ' ')
+                .replace(/\b\w/g, l => l.toUpperCase()) || userId;
+            
+            // Handle special cases
+            if (displayName.trim() === '') displayName = "Test User (Main)";
+            if (displayName === "North") displayName = "Test User (North)";
+            if (displayName === "South") displayName = "Test User (South)";
+            
+            return displayName;
         }
         
         // Create the legend
@@ -195,17 +212,9 @@
             const selectedUser = getUrlParameter('user') || ALL_TEST_USERS;
             console.log("Selected user from URL:", selectedUser);
             
-            // Update user info display
+            // Update user info display with dynamic name
             const userInfo = document.getElementById('userInfo');
-            if (selectedUser === ALL_TEST_USERS) {
-                userInfo.textContent = "All Test Users";
-            } else if (selectedUser === TEST_USER_ID) {
-                userInfo.textContent = "Test User (North)";
-            } else if (selectedUser === TEST_USER_SOUTH_ID) {
-                userInfo.textContent = "Test User (South)";
-            } else {
-                userInfo.textContent = selectedUser;
-            }
+            userInfo.textContent = createDisplayName(selectedUser);
             
             // Update back button to prevent reopening
             const backButton = document.getElementById('backButton');

@@ -5,6 +5,8 @@
 1. [Introduction](#introduction)
 2. [Android SDK Integration](#android-sdk-integration)
    - [Installation](#installation)
+     - [Method 1: JitPack (Recommended)](#method-1-jitpack-recommended)
+     - [Method 2: Local Module](#method-2-local-module)
    - [Initialization](#initialization)
    - [User Identification](#user-identification)
    - [Permissions Management](#permissions-management)
@@ -26,7 +28,10 @@
    - [Filtering Data](#filtering-data)
 5. [Server Deployment](#server-deployment)
    - [Local Development](#local-development)
-   - [Cloud Deployment](#cloud-deployment)
+   - [Before Deployment](#before-deployment)
+   - [Cloud Deployment to Render](#cloud-deployment-to-render)
+   - [After Deployment](#after-deployment)
+   - [Alternative Cloud Deployment](#alternative-cloud-deployment)
    - [Environment Variables](#environment-variables)
    - [Database Setup](#database-setup)
 6. [Troubleshooting](#troubleshooting)
@@ -57,19 +62,69 @@ This documentation provides comprehensive guidance on integrating, configuring, 
 
 ### Installation
 
-#### 1. Add the SDK Module
+#### Method 1: JitPack (Recommended)
 
-Copy the `locationanalyticssdk` directory into your project's root directory.
+The easiest way to integrate the Location Analytics SDK is through JitPack.
 
-#### 2. Update Gradle Files
+##### For Gradle (Groovy)
 
-In your project's `settings.gradle`:
+**Step 1.** Add JitPack repository in your root `settings.gradle` at the end of repositories:
+
+```gradle
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}
+```
+
+**Step 2.** Add the dependency in your app's `build.gradle`:
+
+```gradle
+dependencies {
+    implementation 'com.github.AvielZaman:Location-Analytics-SDK:1.00.04'
+    // Other dependencies
+}
+```
+
+##### For Gradle (Kotlin DSL)
+
+**Step 1.** Add JitPack repository in your `settings.gradle.kts` at the end of repositories:
+
+```kotlin
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
+}
+```
+
+**Step 2.** Add the dependency in your app's `build.gradle.kts`:
+
+```kotlin
+dependencies {
+    implementation("com.github.AvielZaman:Location-Analytics-SDK:1.00.04")
+    // Other dependencies
+}
+```
+
+#### Method 2: Local Module
+
+Alternatively, you can integrate the SDK as a local module.
+
+**Step 1.** Copy the `locationanalyticssdk` directory into your project's root directory.
+
+**Step 2.** Update your project's `settings.gradle`:
 
 ```gradle
 include ':app', ':locationanalyticssdk'
 ```
 
-In your app's `build.gradle`:
+**Step 3.** Add the dependency in your app's `build.gradle`:
 
 ```gradle
 dependencies {
@@ -78,7 +133,7 @@ dependencies {
 }
 ```
 
-#### 3. Update AndroidManifest.xml
+#### Required Permissions
 
 Add the required permissions to your `AndroidManifest.xml`:
 
@@ -94,7 +149,7 @@ For background tracking on Android 10+ (API level 29+), you'll also need:
 <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 ```
 
-#### 4. Sync Project with Gradle
+#### Sync Project
 
 Run the "Sync Project with Gradle Files" option in Android Studio.
 
@@ -616,7 +671,7 @@ Filter the data to focus on specific users or time periods:
 
 1. Clone the repository
 2. Install dependencies:
-   ```
+   ```bash
    cd Server
    npm install
    ```
@@ -628,22 +683,61 @@ Filter the data to focus on specific users or time periods:
    SERVER_URL=your_server_url
    ```
 4. Start the server:
-   ```
+   ```bash
    npm start
    ```
 
-### Cloud Deployment
+### Before Deployment
 
-#### Deploying to Render
+Before deploying the project, make sure to:
 
-1. Push your code to a GitHub repository
-2. Sign up for a Render account
-3. Create a new Web Service
-4. Connect to your GitHub repository
-5. Set the build command: `cd Server && npm install`
-6. Set the start command: `cd Server && npm start`
-7. Add environment variables in the Render dashboard
-8. Deploy the service
+1. **Ensure all code is committed** to your GitHub repository
+2. **Check environment variables** in your `.env` file are ready for production use
+3. **Test locally** to confirm everything works on your development machine
+4. **Review security settings** to ensure your API is properly secured
+
+### Cloud Deployment to Render
+
+The server and dashboard can be deployed to Render in a few simple steps:
+
+1. **Create a Render account** at [render.com](https://render.com/)
+2. **Connect your GitHub repository** to Render
+3. **Create a new Web Service** with these settings:
+   - Environment: `Node`
+   - Build Command: `cd Server && npm install`
+   - Start Command: `cd Server && node server.js`
+4. **Set up environment variables**:
+   - `MONGODB_URI`: Your MongoDB connection string
+   - `API_KEY`: Your API key for authentication
+   - `SERVER_URL`: Will be automatically set to your Render URL
+   - `PORT`: 10000 (or your preferred port)
+5. **Create the Web Service** and wait for deployment to complete
+
+Both the server API and dashboard will be deployed together, as the Express server serves the dashboard files.
+
+### After Deployment
+
+After successful deployment, you need to make these changes:
+
+1. **Update Android SDK/Example App**:
+   - Change `SERVER_URL` in `MainActivity.java` to your new Render URL:
+     ```java
+     private static final String SERVER_URL = "https://your-render-app-name.onrender.com/";
+     ```
+   - Rebuild the Android app with this updated URL
+
+2. **Verify Deployment**:
+   - Open your Render URL in a browser to check if the dashboard is working
+   - Test API endpoints using tools like Postman
+   - Test the Android app with the updated server URL
+
+3. **Monitor Usage**:
+   - Watch server logs in the Render dashboard for any errors
+   - Monitor MongoDB usage and performance
+
+The dashboard is served by the server and doesn't require separate deployment.
+
+### Alternative Cloud Deployment
 
 #### Deploying to Heroku
 
@@ -740,6 +834,13 @@ Filter the data to focus on specific users or time periods:
 - Try refreshing the data
 
 ## Release Notes
+
+### Version 1.00.04 (May 2025)
+
+- Latest stable release
+- Improved JitPack integration
+- Enhanced deployment documentation
+- Bug fixes and performance improvements
 
 ### Version 1.0.0 (May 2025)
 

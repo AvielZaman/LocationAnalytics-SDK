@@ -29,7 +29,7 @@ import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
-    private static final String SERVER_URL = "https://location-analytics-sdk.onrender.com";
+    private static final String SERVER_URL = "http://localhost:3000";
     private static final String API_KEY = "demo_api_key";
     private String userId;
 

@@ -1,19 +1,17 @@
-// Server/seedTestData.js
+// Server/tools/seedTestData.js
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const { User, getLocationModel } = require('../models');
+const { User, getLocationModel } = require('../models'); // Note: ../ to go up one directory
 
-// Load environment variables
-dotenv.config();
+// Load environment variables from parent directory
+dotenv.config({ path: '../.env' });
 
-// Constants matching the original testData.js
-const TEST_USER_ID = 'test_user';  // North user
-const TEST_USER_SOUTH_ID = 'test_user_south';  // South user
-const ALL_TEST_USERS = 'all_test_users';  // Combined user
+// Constants for all test users
+const ALL_TEST_USERS = 'all_test_users';  // Combined user for all test users
 
-// Define test user profiles (SAME AS ORIGINAL testData.js)
+// Define all 10 test user profiles with diverse locations across Israel
 const USER_PROFILES = {
-    [TEST_USER_ID]: {  // North user
+    'test_user_north': {  // Original north user
         displayName: "Test User (North)",
         clusters: [
             { name: "Tel Aviv", center: [32.0853, 34.7818], weight: 0.4 },
@@ -27,7 +25,7 @@ const USER_PROFILES = {
             17: 0.15, 18: 0.1, 19: 0.1, 20: 0.05
         }
     },
-    [TEST_USER_SOUTH_ID]: {  // South user
+    'test_user_south': {  // Original south user
         displayName: "Test User (South)",
         clusters: [
             { name: "Beer Sheva", center: [31.2530, 34.7915], weight: 0.35 },
@@ -39,6 +37,118 @@ const USER_PROFILES = {
         timeDistribution: {
             10: 0.05, 11: 0.05, 12: 0.05, 16: 0.1, 17: 0.1,
             19: 0.1, 20: 0.15, 21: 0.15, 22: 0.15, 23: 0.1
+        }
+    },
+    'test_user_coastal': {  // New coastal user
+        displayName: "Coastal Explorer",
+        clusters: [
+            { name: "Netanya", center: [32.3226, 34.8533], weight: 0.3 },
+            { name: "Herzliya", center: [32.1624, 34.8441], weight: 0.25 },
+            { name: "Tel Aviv", center: [32.0853, 34.7818], weight: 0.2 },
+            { name: "Caesarea", center: [32.5016, 34.8933], weight: 0.15 },
+            { name: "Hadera", center: [32.4341, 34.9191], weight: 0.1 }
+        ],
+        timeDistribution: {
+            6: 0.1, 7: 0.1, 8: 0.1, 14: 0.1, 15: 0.1,
+            18: 0.2, 19: 0.15, 20: 0.1, 21: 0.05
+        }
+    },
+    'test_user_mountain': {  // New mountain/central user
+        displayName: "Mountain Dweller",
+        clusters: [
+            { name: "Jerusalem", center: [31.7683, 35.2137], weight: 0.4 },
+            { name: "Bethlehem", center: [31.7054, 35.2024], weight: 0.2 },
+            { name: "Ramallah", center: [31.8996, 35.2042], weight: 0.15 },
+            { name: "Hebron", center: [31.5326, 35.0998], weight: 0.15 },
+            { name: "Maaleh Adumim", center: [31.7730, 35.2954], weight: 0.1 }
+        ],
+        timeDistribution: {
+            8: 0.15, 9: 0.15, 10: 0.1, 13: 0.1, 14: 0.1,
+            16: 0.15, 17: 0.1, 19: 0.1, 21: 0.05
+        }
+    },
+    'test_user_desert': {  // New desert/southern user
+        displayName: "Desert Wanderer",
+        clusters: [
+            { name: "Beer Sheva", center: [31.2530, 34.7915], weight: 0.25 },
+            { name: "Arad", center: [31.2587, 35.2137], weight: 0.2 },
+            { name: "Dimona", center: [31.0686, 35.0299], weight: 0.2 },
+            { name: "Eilat", center: [29.5577, 34.9519], weight: 0.2 },
+            { name: "Mitzpe Ramon", center: [30.6103, 34.8011], weight: 0.15 }
+        ],
+        timeDistribution: {
+            6: 0.1, 7: 0.15, 11: 0.1, 12: 0.1, 16: 0.15,
+            17: 0.1, 18: 0.15, 20: 0.1, 22: 0.05
+        }
+    },
+    'test_user_tech_hub': {  // New tech hub user
+        displayName: "Tech Hub Worker",
+        clusters: [
+            { name: "Tel Aviv", center: [32.0853, 34.7818], weight: 0.35 },
+            { name: "Ramat Gan", center: [32.0823, 34.8140], weight: 0.25 },
+            { name: "Petah Tikva", center: [32.0878, 34.8878], weight: 0.15 },
+            { name: "Bnei Brak", center: [32.0808, 34.8338], weight: 0.15 },
+            { name: "Holon", center: [32.0167, 34.7667], weight: 0.1 }
+        ],
+        timeDistribution: {
+            7: 0.1, 8: 0.2, 9: 0.15, 12: 0.1, 13: 0.05,
+            17: 0.15, 18: 0.15, 19: 0.05, 20: 0.05
+        }
+    },
+    'test_user_northern_border': {  // New northern border user
+        displayName: "Northern Border Resident",
+        clusters: [
+            { name: "Kiryat Shmona", center: [33.2072, 35.5695], weight: 0.3 },
+            { name: "Safed", center: [32.9647, 35.4950], weight: 0.25 },
+            { name: "Nahariya", center: [33.0073, 35.0950], weight: 0.2 },
+            { name: "Acre", center: [32.9234, 35.0818], weight: 0.15 },
+            { name: "Metula", center: [33.2824, 35.5691], weight: 0.1 }
+        ],
+        timeDistribution: {
+            6: 0.1, 8: 0.15, 9: 0.1, 15: 0.1, 16: 0.15,
+            18: 0.15, 19: 0.1, 20: 0.1, 22: 0.05
+        }
+    },
+    'test_user_valley': {  // New central valley user
+        displayName: "Valley Commuter",
+        clusters: [
+            { name: "Afula", center: [32.6044, 35.2897], weight: 0.3 },
+            { name: "Nazareth", center: [32.7018, 35.2985], weight: 0.25 },
+            { name: "Jenin", center: [32.4615, 35.2969], weight: 0.2 },
+            { name: "Beit Shean", center: [32.4969, 35.4997], weight: 0.15 },
+            { name: "Umm al-Fahm", center: [32.5189, 35.1522], weight: 0.1 }
+        ],
+        timeDistribution: {
+            7: 0.15, 8: 0.15, 9: 0.1, 14: 0.1, 15: 0.1,
+            17: 0.15, 18: 0.1, 19: 0.1, 21: 0.05
+        }
+    },
+    'test_user_port': {  // New southern port user
+        displayName: "Port Worker",
+        clusters: [
+            { name: "Ashdod", center: [31.8040, 34.6550], weight: 0.35 },
+            { name: "Ashkelon", center: [31.6688, 34.5742], weight: 0.25 },
+            { name: "Gaza", center: [31.5017, 34.4668], weight: 0.15 },
+            { name: "Kiryat Gat", center: [31.6100, 34.7642], weight: 0.15 },
+            { name: "Sderot", center: [31.5240, 34.5965], weight: 0.1 }
+        ],
+        timeDistribution: {
+            5: 0.1, 6: 0.15, 7: 0.15, 14: 0.15, 15: 0.15,
+            16: 0.1, 18: 0.1, 20: 0.05, 22: 0.05
+        }
+    },
+    'test_user_eastern': {  // New eastern user
+        displayName: "Jordan Valley Explorer",
+        clusters: [
+            { name: "Tiberias", center: [32.7940, 35.5300], weight: 0.3 },
+            { name: "Beit Shean", center: [32.4969, 35.4997], weight: 0.25 },
+            { name: "Jericho", center: [31.8607, 35.4444], weight: 0.2 },
+            { name: "Jordan Valley", center: [32.2000, 35.5500], weight: 0.15 },
+            { name: "Ein Gedi", center: [31.4619, 35.3888], weight: 0.1 }
+        ],
+        timeDistribution: {
+            6: 0.1, 7: 0.1, 11: 0.15, 12: 0.15, 16: 0.15,
+            17: 0.1, 18: 0.1, 19: 0.1, 21: 0.05
         }
     }
 };
@@ -59,19 +169,43 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     return R * c;
 }
 
-// Generate realistic location patterns with LESS TRAVEL
+// Weighted destination selection function
+function selectWeightedDestination(stopPoints, excludeLocation = null) {
+    // Filter out the exclude location
+    const availableStops = stopPoints.filter(stop => stop !== excludeLocation);
+    if (availableStops.length === 0) return stopPoints[0];
+    
+    // Create weighted selection based on cluster weights
+    const totalWeight = availableStops.reduce((sum, stop) => sum + stop.weight, 0);
+    let random = Math.random() * totalWeight;
+    
+    for (const stop of availableStops) {
+        random -= stop.weight;
+        if (random <= 0) {
+            return stop;
+        }
+    }
+    
+    // Fallback
+    return availableStops[0];
+}
+
+// Generate realistic location patterns with WEIGHTED selection
 const generateRealisticLocations = (userId, userProfile, startTime, endTime) => {
     const locations = [];
     const clusters = userProfile.clusters;
     
-    // Create MORE stop points for each cluster
+    // Create WEIGHTED stop points for each cluster based on their weight
     const stopPoints = [];
     clusters.forEach(cluster => {
-        // Create 4-7 stop points per cluster (increased for more stops)
-        const numStops = 4 + Math.floor(Math.random() * 4);
+        // Number of stops based on weight (minimum 3, maximum 15)
+        const numStops = Math.max(3, Math.floor(cluster.weight * 30));
+        
+        console.log(`  Creating ${numStops} stops for ${cluster.name} (weight: ${cluster.weight})`);
+        
         for (let i = 0; i < numStops; i++) {
             const angle = Math.random() * 2 * Math.PI;
-            const distance = Math.random() * 0.001; // Within 100m of cluster center
+            const distance = Math.random() * 0.0015; // Within 150m of cluster center
             
             const latOffset = distance * Math.cos(angle);
             const lngOffset = distance * Math.sin(angle) / Math.cos(cluster.center[0] * Math.PI / 180);
@@ -80,10 +214,13 @@ const generateRealisticLocations = (userId, userProfile, startTime, endTime) => 
                 lat: cluster.center[0] + latOffset,
                 lng: cluster.center[1] + lngOffset,
                 city: cluster.name,
-                cluster: cluster
+                cluster: cluster,
+                weight: cluster.weight // Store weight for selection
             });
         }
     });
+    
+    console.log(`  Generated ${stopPoints.length} weighted stop points for ${userId}`);
     
     // Simulate daily patterns
     let currentTime = startTime;
@@ -94,8 +231,8 @@ const generateRealisticLocations = (userId, userProfile, startTime, endTime) => 
         const dayStart = currentTime;
         const dayEnd = Math.min(currentTime + oneDay, endTime);
         
-        // Generate FEWER trips per day (1-3 instead of 3-6)
-        const numTrips = 1 + Math.floor(Math.random() * 3);
+        // Generate trips per day based on user activity
+        const numTrips = 3 + Math.floor(Math.random() * 4); // 3-6 trips per day
         const tripTimes = [];
         
         // Generate trip times based on user's time distribution
@@ -112,41 +249,16 @@ const generateRealisticLocations = (userId, userProfile, startTime, endTime) => 
         // Sort trip times
         tripTimes.sort((a, b) => a - b);
         
-        // Generate locations for each trip
-        let currentLocation = stopPoints[Math.floor(Math.random() * stopPoints.length)]; // Start from a random stop
+        // Start from a weighted random location
+        let currentLocation = selectWeightedDestination(stopPoints);
         
         for (let i = 0; i < tripTimes.length; i++) {
             const tripStartTime = tripTimes[i];
             
-            // Select destination - prefer closer locations more often
-            let destination;
-            const preferCloseDestination = Math.random() < 0.7; // 70% chance to pick a closer destination
+            // Select destination using WEIGHTED selection (respects cluster weights)
+            let destination = selectWeightedDestination(stopPoints, currentLocation);
             
-            if (preferCloseDestination && currentLocation) {
-                // Find stops within the same cluster or nearby
-                const nearbyStops = stopPoints.filter(stop => 
-                    stop.cluster === currentLocation.cluster || 
-                    calculateDistance(currentLocation.lat, currentLocation.lng, stop.lat, stop.lng) < 5000 // Within 5km
-                );
-                
-                if (nearbyStops.length > 1) {
-                    do {
-                        destination = nearbyStops[Math.floor(Math.random() * nearbyStops.length)];
-                    } while (destination === currentLocation);
-                } else {
-                    destination = stopPoints[Math.floor(Math.random() * stopPoints.length)];
-                }
-            } else {
-                // Random destination
-                do {
-                    destination = stopPoints[Math.floor(Math.random() * stopPoints.length)];
-                } while (currentLocation && calculateDistance(
-                    currentLocation.lat, currentLocation.lng,
-                    destination.lat, destination.lng
-                ) < 500); // At least 500m away
-            }
-            
-            if (currentLocation) {
+            if (currentLocation && currentLocation !== destination) {
                 // Generate path from current location to destination
                 const pathLocations = generatePath(
                     currentLocation, 
@@ -157,11 +269,11 @@ const generateRealisticLocations = (userId, userProfile, startTime, endTime) => 
                 locations.push(...pathLocations);
             }
             
-            // Generate LONGER stops at destination (30-120 minutes)
-            const stopDuration = 30 * 60 * 1000 + Math.random() * 90 * 60 * 1000;
+            // Generate LONGER stops at destination (45-180 minutes)
+            const stopDuration = 45 * 60 * 1000 + Math.random() * 135 * 60 * 1000;
             const stopLocations = generateStop(
                 destination,
-                tripStartTime + (currentLocation ? 20 * 60 * 1000 : 0), // Travel time
+                tripStartTime + (currentLocation ? 15 * 60 * 1000 : 0), // Travel time
                 stopDuration,
                 userId
             );
@@ -181,18 +293,18 @@ function generatePath(start, end, startTime, userId) {
     const locations = [];
     const distance = calculateDistance(start.lat, start.lng, end.lat, end.lng);
     
-    // Estimate travel time (15 km/h average speed - reduced from 30)
-    const travelTime = (distance / 1000) * 4 * 60 * 1000; // minutes to milliseconds
+    // Estimate travel time (20 km/h average speed)
+    const travelTime = (distance / 1000) * 3 * 60 * 1000; // minutes to milliseconds
     
     // Number of points based on distance (1 point per km)
-    const numPoints = Math.max(5, Math.floor(distance / 1000));
+    const numPoints = Math.max(3, Math.floor(distance / 1000));
     
     for (let i = 0; i < numPoints; i++) {
         const progress = i / (numPoints - 1);
         
         // Linear interpolation with some random variation
-        const lat = start.lat + (end.lat - start.lat) * progress + (Math.random() - 0.5) * 0.0005;
-        const lng = start.lng + (end.lng - start.lng) * progress + (Math.random() - 0.5) * 0.0005;
+        const lat = start.lat + (end.lat - start.lat) * progress + (Math.random() - 0.5) * 0.0003;
+        const lng = start.lng + (end.lng - start.lng) * progress + (Math.random() - 0.5) * 0.0003;
         
         locations.push({
             user_id: userId,
@@ -210,12 +322,12 @@ function generatePath(start, end, startTime, userId) {
 // Generate stop at a location (with MORE points for better stop detection)
 function generateStop(stopPoint, startTime, duration, userId) {
     const locations = [];
-    const numPoints = Math.max(10, Math.floor(duration / (5 * 60 * 1000))); // More points per stop
+    const numPoints = Math.max(8, Math.floor(duration / (3 * 60 * 1000))); // More points per stop
     
     for (let i = 0; i < numPoints; i++) {
-        // Small random movement within 30m
+        // Small random movement within 50m
         const angle = Math.random() * 2 * Math.PI;
-        const distance = Math.random() * 0.0003; // ~30m
+        const distance = Math.random() * 0.0005; // ~50m
         
         const lat = stopPoint.lat + distance * Math.cos(angle);
         const lng = stopPoint.lng + distance * Math.sin(angle) / Math.cos(stopPoint.lat * Math.PI / 180);
@@ -233,34 +345,13 @@ function generateStop(stopPoint, startTime, duration, userId) {
     return locations;
 }
 
-// Generate all test users data
-const generateAllTestUsersData = (startTime, endTime) => {
-    const allUserLocations = [];
-    
-    // Generate locations for both test users
-    Object.keys(USER_PROFILES).forEach(userId => {
-        const userProfile = USER_PROFILES[userId];
-        const locations = generateRealisticLocations(userId, userProfile, startTime, endTime);
-        
-        // Add to all users collection with ALL_TEST_USERS as user_id
-        const allUsersLocations = locations.map(loc => ({
-            ...loc,
-            user_id: ALL_TEST_USERS
-        }));
-        
-        allUserLocations.push(...allUsersLocations);
-    });
-    
-    return allUserLocations;
-};
-
 async function seedTestData() {
     try {
-        console.log('🌱 Starting to seed test data...');
+        console.log('🌱 Starting to seed test data for 10 users...');
         console.log(`📍 Test users to seed:`);
-        console.log(`   - ${TEST_USER_ID} (North)`);
-        console.log(`   - ${TEST_USER_SOUTH_ID} (South)`);
-        console.log(`   - ${ALL_TEST_USERS} (Combined data from both users)`);
+        Object.keys(USER_PROFILES).forEach(userId => {
+            console.log(`   - ${userId} (${USER_PROFILES[userId].displayName})`);
+        });
         
         // Connect to MongoDB
         await mongoose.connect(process.env.MONGODB_URI);
@@ -291,7 +382,7 @@ async function seedTestData() {
             // Check if user already exists
             let user = await User.findOne({ user_id: userId });
             
-            // Generate realistic locations
+            // Generate realistic locations with weighted selection
             const locations = generateRealisticLocations(userId, userProfile, startTime, endTime);
             console.log(`✓ Generated ${locations.length} locations for ${userId}`);
             
@@ -309,6 +400,8 @@ async function seedTestData() {
                 });
                 await user.save();
                 console.log(`✓ Created user ${userId}`);
+            } else {
+                console.log(`✓ User ${userId} already exists, updating...`);
             }
             
             // Get the location model for this user
@@ -318,7 +411,7 @@ async function seedTestData() {
             await LocationModel.deleteMany({});
             console.log(`✓ Cleared existing locations for ${userId}`);
             
-            // Insert locations (no duplicates for realistic data)
+            // Insert locations
             await LocationModel.insertMany(locations);
             console.log(`✓ Inserted ${locations.length} locations for ${userId}`);
             
@@ -334,57 +427,30 @@ async function seedTestData() {
             console.log(`✓ Updated user ${userId} metadata`);
         }
         
-        // Create ALL_TEST_USERS entry
+        // Create/Update ALL_TEST_USERS entry (this will be handled dynamically now)
         console.log(`\n📍 Processing combined user: ${ALL_TEST_USERS}`);
         
         // Check if all_test_users already exists
         let allUsersUser = await User.findOne({ user_id: ALL_TEST_USERS });
         
-        // Generate combined locations
-        const allUserLocations = generateAllTestUsersData(startTime, endTime);
-        console.log(`✓ Generated ${allUserLocations.length} locations for ${ALL_TEST_USERS}`);
-        
-        // Calculate first and last seen
-        const firstSeen = allUserLocations.reduce((min, loc) => Math.min(min, loc.timestamp), Infinity);
-        const lastSeen = allUserLocations.reduce((max, loc) => Math.max(max, loc.timestamp), 0);
-        
         if (!allUsersUser) {
-            // Create new user
+            // Create placeholder user - actual data will be calculated dynamically
             allUsersUser = new User({
                 user_id: ALL_TEST_USERS,
-                first_seen: firstSeen,
-                last_seen: lastSeen,
+                first_seen: startTime,
+                last_seen: endTime,
                 total_locations: 0
             });
             await allUsersUser.save();
-            console.log(`✓ Created user ${ALL_TEST_USERS}`);
+            console.log(`✓ Created placeholder user ${ALL_TEST_USERS}`);
+        } else {
+            console.log(`✓ User ${ALL_TEST_USERS} already exists - data will be calculated dynamically`);
         }
         
-        // Get the location model for ALL_TEST_USERS
-        const AllUsersLocationModel = getLocationModel(ALL_TEST_USERS);
-        
-        // Clear existing locations (if any)
-        await AllUsersLocationModel.deleteMany({});
-        console.log(`✓ Cleared existing locations for ${ALL_TEST_USERS}`);
-        
-        // Insert locations
-        await AllUsersLocationModel.insertMany(allUserLocations);
-        console.log(`✓ Inserted ${allUserLocations.length} locations for ${ALL_TEST_USERS}`);
-        
-        // Update user's location count
-        await User.updateOne(
-            { user_id: ALL_TEST_USERS },
-            { 
-                total_locations: allUserLocations.length,
-                first_seen: firstSeen,
-                last_seen: lastSeen
-            }
-        );
-        console.log(`✓ Updated user ${ALL_TEST_USERS} metadata`);
-        
-        console.log('\n✅ Test data seeded successfully!');
-        console.log('📊 Note: Statistics will be calculated in real-time when requested');
+        console.log('\n✅ Test data seeded successfully with WEIGHTED generation!');
+        console.log('📊 Note: Locations now properly respect cluster weights');
         console.log('📅 Dashboard should show date range from', startDate.toDateString(), 'to', endDate.toDateString());
+        console.log('👥 Total users created:', Object.keys(USER_PROFILES).length);
         
     } catch (error) {
         console.error('❌ Error seeding test data:', error);

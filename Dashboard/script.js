@@ -41,8 +41,6 @@ import {
 
 // Constants
 const USE_TEST_DATA = true; // When true, uses test users from database
-const TEST_USER_ID = 'test_user';  // North user
-const TEST_USER_SOUTH_ID = 'test_user_south';  // South user
 const ALL_TEST_USERS = 'all_test_users';  // Combined user
 
 // LocalStorage keys
@@ -76,6 +74,7 @@ let statistics = {};
 let mapMode = 'heat'; // 'heat', 'path', 'stops'
 let map;
 let mapLayers;
+let allUsers = []; // Store all users loaded from database
 
 // Initialize
 async function init() {
@@ -103,8 +102,8 @@ async function init() {
     
     if (USE_TEST_DATA) {
         // Using test data from MongoDB
-        updateConnectionStatus(statusIndicator, 'Loading test data from database', true);
-        await setupTestDataFromDatabase();
+        updateConnectionStatus(statusIndicator, 'Loading users from database', true);
+        await setupDynamicUsersFromDatabase();
         
         // Make sure path button state is correct on init
         updatePathButtonState();
@@ -118,8 +117,7 @@ async function init() {
         
         // Fetch initial data
         try {
-            const users = await fetchUsers();
-            populateUserSelect(userSelect, users);
+            await loadUsersAndSetupUI();
             fetchData();
             
             // Check path button after loading data
@@ -152,66 +150,30 @@ async function init() {
     console.log("Map initialized in empty state with mode: none");
 }
 
-// Setup Test Data from Database
-async function setupTestDataFromDatabase() {
-    console.log("Setting up test data from database...");
+// Setup Dynamic Users from Database
+async function setupDynamicUsersFromDatabase() {
+    console.log("Setting up dynamic users from database...");
     
     try {
-        // Fetch test users from database
-        const users = await fetchUsers();
+        // Load all users from database
+        await loadUsersAndSetupUI();
         
-        // Filter test users
-        const testUsers = users.filter(user => 
-            user.user_id === TEST_USER_ID || 
-            user.user_id === TEST_USER_SOUTH_ID ||
-            user.user_id === ALL_TEST_USERS
-        );
-        
-        console.log("Found test users in database:", testUsers);
-        
-        if (testUsers.length === 0) {
-            console.error("No test users found in database. Please run seedTestData.js first.");
-            updateConnectionStatus(document.getElementById('connection-status'), 'No test data found', false);
+        if (allUsers.length === 0) {
+            console.error("No users found in database. Please run seedTestData.js first.");
+            updateConnectionStatus(document.getElementById('connection-status'), 'No users found', false);
             return;
         }
         
-        // Add test users to dropdown with proper labels
-        const dropdownUsers = testUsers.map(user => {
-            let displayName;
-            switch(user.user_id) {
-                case TEST_USER_ID:
-                    displayName = "Test User (North)";
-                    break;
-                case TEST_USER_SOUTH_ID:
-                    displayName = "Test User (South)";
-                    break;
-                case ALL_TEST_USERS:
-                    displayName = "All Test Users";
-                    break;
-                default:
-                    displayName = user.user_id;
-            }
-            return { user_id: user.user_id, display_name: displayName };
-        });
-        
-        populateUserSelect(userSelect, dropdownUsers, true);
-        
         // Setup event listeners
-        userSelect.addEventListener('change', async () => {
-            selectedUser = userSelect.value;
-            console.log("User selection changed to:", selectedUser);
-            saveStateToStorage();
-            updatePathButtonState();
-            resetMapDisplay(); // Reset map when user changes
-            await fetchTestDataFromDatabase();
-            updateUI();
-        });
+        await setupEventListeners();
         
-        // Restore selected user in dropdown
-        if (selectedUser && dropdownUsers.some(u => u.user_id === selectedUser)) {
+        // Restore selected user in dropdown or set default
+        if (selectedUser && allUsers.some(u => u.user_id === selectedUser)) {
             userSelect.value = selectedUser;
         } else {
-            selectedUser = TEST_USER_ID;
+            // Default to first individual user (not 'all_test_users')
+            const firstIndividualUser = allUsers.find(u => u.user_id !== ALL_TEST_USERS);
+            selectedUser = firstIndividualUser ? firstIndividualUser.user_id : allUsers[0].user_id;
             userSelect.value = selectedUser;
             saveStateToStorage();
         }
@@ -222,40 +184,76 @@ async function setupTestDataFromDatabase() {
         // Update UI with test data
         updateUI();
         
-        // Add refresh button functionality
-        refreshBtn.addEventListener('click', async () => {
-            resetMapDisplay(); // Reset map on refresh
-            await fetchTestDataFromDatabase();
-            updateUI();
-        });
-        
-        // Add date filter functionality
-        startDateInput.addEventListener('change', async () => {
-            saveStateToStorage();
-            resetMapDisplay(); // Reset map when dates change
-            await fetchTestDataFromDatabase();
-            updateUI();
-        });
-        
-        endDateInput.addEventListener('change', async () => {
-            saveStateToStorage();
-            resetMapDisplay(); // Reset map when dates change
-            await fetchTestDataFromDatabase();
-            updateUI();
-        });
-        
-        // Set up map mode buttons
-        setupMapButtonListeners();
-        
         // Update status
-        updateConnectionStatus(document.getElementById('connection-status'), 'Test data loaded from database', true);
+        updateConnectionStatus(document.getElementById('connection-status'), 'Users loaded from database', true);
     } catch (error) {
-        console.error('Error setting up test data from database:', error);
-        updateConnectionStatus(document.getElementById('connection-status'), 'Error loading test data', false);
+        console.error('Error setting up dynamic users from database:', error);
+        updateConnectionStatus(document.getElementById('connection-status'), 'Error loading users', false);
     }
 }
 
-// Fetch test data from database - FIXED TO INCLUDE DATE FILTERING FOR STATISTICS
+// Load users and setup UI dynamically
+async function loadUsersAndSetupUI() {
+    console.log("Loading users from database...");
+    
+    try {
+        // Fetch all users from database
+        const users = await fetchUsers();
+        console.log("Raw users from database:", users);
+        
+        if (!users || users.length === 0) {
+            throw new Error("No users found in database");
+        }
+        
+        // Filter and sort users
+        allUsers = users.filter(user => user.user_id) // Ensure user has an ID
+            .sort((a, b) => {
+                // Sort: 'all_test_users' first, then alphabetically
+                if (a.user_id === ALL_TEST_USERS) return -1;
+                if (b.user_id === ALL_TEST_USERS) return 1;
+                return a.user_id.localeCompare(b.user_id);
+            });
+        
+        console.log(`Found ${allUsers.length} users:`, allUsers.map(u => u.user_id));
+        
+        // Create dropdown options with display names
+        const dropdownUsers = allUsers.map(user => {
+            let displayName;
+            
+            // Create friendly display names
+            if (user.user_id === ALL_TEST_USERS) {
+                displayName = "All Test Users";
+            } else {
+                // Convert user_id to friendly name
+                displayName = user.user_id
+                    .replace(/test_user_?/, '')
+                    .replace(/_/g, ' ')
+                    .replace(/\b\w/g, l => l.toUpperCase()) || user.user_id;
+                
+                // Handle special cases
+                if (displayName.trim() === '') displayName = "Test User (Main)";
+                if (displayName === "North") displayName = "Test User (North)";
+                if (displayName === "South") displayName = "Test User (South)";
+            }
+            
+            return { 
+                user_id: user.user_id, 
+                display_name: displayName 
+            };
+        });
+        
+        // Populate the dropdown
+        populateUserSelect(userSelect, dropdownUsers, true);
+        
+        console.log("Successfully populated user dropdown with", dropdownUsers.length, "users");
+        
+    } catch (error) {
+        console.error('Error loading users:', error);
+        throw error;
+    }
+}
+
+// Fetch test data from database with dynamic user support
 async function fetchTestDataFromDatabase() {
     console.log("Fetching test data from database...");
     
@@ -276,82 +274,32 @@ async function fetchTestDataFromDatabase() {
             // For all users, we need to calculate combined statistics properly
             console.log("Calculating combined statistics for all users");
             
-            // Fetch individual user data
-            const northUserLocations = await fetchLocations(TEST_USER_ID, startTime, endTime);
-            const southUserLocations = await fetchLocations(TEST_USER_SOUTH_ID, startTime, endTime);
+            // Get all individual users (excluding 'all_test_users')
+            const individualUsers = allUsers.filter(u => u.user_id !== ALL_TEST_USERS);
             
-            // Calculate individual statistics
-            const northStats = calculateStatisticsFromLocations(TEST_USER_ID, northUserLocations);
-            const southStats = calculateStatisticsFromLocations(TEST_USER_SOUTH_ID, southUserLocations);
-            
-            // Combine statistics properly
-            statistics = {
-                user_id: ALL_TEST_USERS,
-                total_locations: northStats.total_locations + southStats.total_locations,
-                distance_traveled_meters: northStats.distance_traveled_meters + southStats.distance_traveled_meters,
-                first_location_timestamp: Math.min(
-                    northStats.first_location_timestamp || Infinity,
-                    southStats.first_location_timestamp || Infinity
-                ),
-                last_location_timestamp: Math.max(
-                    northStats.last_location_timestamp || 0,
-                    southStats.last_location_timestamp || 0
-                ),
-                city_visits: {},
-                common_stops: [],
-                activity_hours: {}
-            };
-            
-            // Combine city visits
-            const allCityVisits = {...northStats.city_visits};
-            for (const city in southStats.city_visits) {
-                allCityVisits[city] = (allCityVisits[city] || 0) + southStats.city_visits[city];
-            }
-            statistics.city_visits = allCityVisits;
-            
-            // Combine activity hours
-            for (let hour = 0; hour < 24; hour++) {
-                statistics.activity_hours[hour] = 
-                    (northStats.activity_hours[hour] || 0) + 
-                    (southStats.activity_hours[hour] || 0);
-            }
-            
-            // Combine and process stops
-            const allStops = [...northStats.common_stops, ...southStats.common_stops];
-            
-            // Cluster nearby stops
-            const clusterThreshold = 200; // meters
-            const clusteredStops = [];
-            
-            for (const stop of allStops) {
-                let found = false;
+            if (individualUsers.length === 0) {
+                console.warn("No individual users found for combined statistics");
+                statistics = {
+                    user_id: ALL_TEST_USERS,
+                    total_locations: 0,
+                    distance_traveled_meters: 0,
+                    activity_hours: {},
+                    common_stops: [],
+                    city_visits: {}
+                };
+            } else {
+                // Fetch individual user data and combine
+                const allUserStats = [];
                 
-                for (const cluster of clusteredStops) {
-                    const distance = calculateDistance(
-                        stop.latitude, stop.longitude,
-                        cluster.latitude, cluster.longitude
-                    );
-                    
-                    if (distance <= clusterThreshold) {
-                        // Merge stops
-                        cluster.visit_count += stop.visit_count;
-                        cluster.average_duration_minutes = 
-                            (cluster.average_duration_minutes * (cluster.visit_count - stop.visit_count) + 
-                             stop.average_duration_minutes * stop.visit_count) / cluster.visit_count;
-                        found = true;
-                        break;
-                    }
+                for (const user of individualUsers) {
+                    const userLocations = await fetchLocations(user.user_id, startTime, endTime);
+                    const userStats = calculateStatisticsFromLocations(user.user_id, userLocations);
+                    allUserStats.push(userStats);
                 }
                 
-                if (!found) {
-                    clusteredStops.push({...stop});
-                }
+                // Combine statistics properly
+                statistics = combineUserStatistics(allUserStats);
             }
-            
-            // Sort and limit stops
-            statistics.common_stops = clusteredStops
-                .sort((a, b) => b.visit_count - a.visit_count)
-                .slice(0, 20);
                 
         } else {
             // For individual users, calculate normally
@@ -361,7 +309,8 @@ async function fetchTestDataFromDatabase() {
         console.log("Calculated statistics:", statistics);
         
         // Update stats display
-        const userCount = selectedUser === ALL_TEST_USERS ? 2 : 1;
+        const userCount = selectedUser === ALL_TEST_USERS ? 
+            allUsers.filter(u => u.user_id !== ALL_TEST_USERS).length : 1;
         
         updateStatsDisplay({
             totalUsersEl: document.getElementById('total-users'),
@@ -378,6 +327,106 @@ async function fetchTestDataFromDatabase() {
     } catch (error) {
         console.error('Error fetching test data from database:', error);
     }
+}
+
+// Combine statistics from multiple users
+function combineUserStatistics(userStatsList) {
+    const combined = {
+        user_id: ALL_TEST_USERS,
+        total_locations: 0,
+        distance_traveled_meters: 0,
+        first_location_timestamp: Infinity,
+        last_location_timestamp: 0,
+        city_visits: {},
+        common_stops: [],
+        activity_hours: {}
+    };
+    
+    // Initialize activity hours
+    for (let hour = 0; hour < 24; hour++) {
+        combined.activity_hours[hour] = 0;
+    }
+    
+    // Combine all statistics
+    for (const userStats of userStatsList) {
+        combined.total_locations += userStats.total_locations;
+        combined.distance_traveled_meters += userStats.distance_traveled_meters;
+        
+        if (userStats.first_location_timestamp) {
+            combined.first_location_timestamp = Math.min(
+                combined.first_location_timestamp, 
+                userStats.first_location_timestamp
+            );
+        }
+        
+        if (userStats.last_location_timestamp) {
+            combined.last_location_timestamp = Math.max(
+                combined.last_location_timestamp, 
+                userStats.last_location_timestamp
+            );
+        }
+        
+        // Combine city visits
+        for (const city in userStats.city_visits) {
+            combined.city_visits[city] = (combined.city_visits[city] || 0) + userStats.city_visits[city];
+        }
+        
+        // Combine activity hours
+        for (const hour in userStats.activity_hours) {
+            combined.activity_hours[hour] += userStats.activity_hours[hour];
+        }
+        
+        // Combine stops
+        combined.common_stops.push(...(userStats.common_stops || []));
+    }
+    
+    // Cluster nearby stops
+    if (combined.common_stops.length > 0) {
+        combined.common_stops = clusterNearbyStops(combined.common_stops);
+    }
+    
+    // Handle edge case where no locations were found
+    if (combined.first_location_timestamp === Infinity) {
+        combined.first_location_timestamp = null;
+    }
+    
+    return combined;
+}
+
+// Cluster nearby stops to avoid duplicates
+function clusterNearbyStops(stops) {
+    const clusterThreshold = 200; // meters
+    const clusteredStops = [];
+    
+    for (const stop of stops) {
+        let found = false;
+        
+        for (const cluster of clusteredStops) {
+            const distance = calculateDistance(
+                stop.latitude, stop.longitude,
+                cluster.latitude, cluster.longitude
+            );
+            
+            if (distance <= clusterThreshold) {
+                // Merge stops
+                cluster.visit_count += stop.visit_count;
+                cluster.average_duration_minutes = 
+                    (cluster.average_duration_minutes * (cluster.visit_count - stop.visit_count) + 
+                     stop.average_duration_minutes * stop.visit_count) / cluster.visit_count;
+                found = true;
+                break;
+            }
+        }
+        
+        if (!found) {
+            clusteredStops.push({...stop});
+        }
+    }
+    
+    // Sort and limit stops
+    return clusteredStops
+        .sort((a, b) => b.visit_count - a.visit_count)
+        .slice(0, 20);
 }
 
 // Calculate statistics from filtered locations
@@ -422,7 +471,6 @@ function calculateStatisticsFromLocations(userId, locations) {
     });
     
     // Find stops with the same parameters as used for all users
-    // This ensures consistency between individual and all users view
     stats.common_stops = findStops(sortedLocations, 150, 5 * 60 * 1000, 20);
     
     // Calculate city visits
@@ -490,9 +538,9 @@ function updatePathButtonState() {
     }
 }
 
-// Helper function to check if current view is any form of "all users"
+// Helper function to check if current view is "all users"
 function isAllUsersView() {
-    return selectedUser === ALL_TEST_USERS || selectedUser === null;
+    return selectedUser === ALL_TEST_USERS;
 }
 
 // Restore state from localStorage
@@ -570,34 +618,69 @@ function handleStopsMapClick(event) {
     saveStateToStorage();
 }
 
-// Setup Event Listeners for normal operation
-function setupEventListeners() {
+// Setup Event Listeners for normal operation and test data
+async function setupEventListeners() {
     // User select change
-    userSelect.addEventListener('change', () => {
+    userSelect.addEventListener('change', async () => {
         selectedUser = userSelect.value;
         saveStateToStorage();
         updatePathButtonState();
         resetMapDisplay(); // Reset map when user changes
-        fetchData();
+        
+        if (USE_TEST_DATA) {
+            await fetchTestDataFromDatabase();
+            updateUI();
+        } else {
+            fetchData();
+        }
     });
     
     // Refresh button click
-    refreshBtn.addEventListener('click', () => {
+    refreshBtn.addEventListener('click', async () => {
         resetMapDisplay(); // Reset map on refresh
-        fetchData();
+        
+        if (USE_TEST_DATA) {
+            // Reload users in case new ones were added
+            await loadUsersAndSetupUI();
+            
+            // Restore selected user if it still exists
+            if (selectedUser && allUsers.some(u => u.user_id === selectedUser)) {
+                userSelect.value = selectedUser;
+            } else {
+                selectedUser = userSelect.value;
+                saveStateToStorage();
+            }
+            
+            await fetchTestDataFromDatabase();
+            updateUI();
+        } else {
+            fetchData();
+        }
     });
     
     // Date range changes
-    startDateInput.addEventListener('change', () => {
+    startDateInput.addEventListener('change', async () => {
         saveStateToStorage();
         resetMapDisplay(); // Reset map when dates change
-        fetchData();
+        
+        if (USE_TEST_DATA) {
+            await fetchTestDataFromDatabase();
+            updateUI();
+        } else {
+            fetchData();
+        }
     });
     
-    endDateInput.addEventListener('change', () => {
+    endDateInput.addEventListener('change', async () => {
         saveStateToStorage();
         resetMapDisplay(); // Reset map when dates change
-        fetchData();
+        
+        if (USE_TEST_DATA) {
+            await fetchTestDataFromDatabase();
+            updateUI();
+        } else {
+            fetchData();
+        }
     });
     
     // Set up map mode buttons with event capturing
@@ -791,7 +874,7 @@ function updateUI() {
     
     // Update connection status
     const statusIndicator = document.getElementById('connection-status');
-    updateConnectionStatus(statusIndicator, USE_TEST_DATA ? 'Using test data from database' : 'Connected', true);
+    updateConnectionStatus(statusIndicator, USE_TEST_DATA ? 'Using dynamic data from database' : 'Connected', true);
 }
 
 // Fetch Data (for non-test mode)
