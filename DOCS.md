@@ -84,7 +84,7 @@ dependencyResolutionManagement {
 
 ```gradle
 dependencies {
-    implementation 'com.github.AvielZaman:Location-Analytics-SDK:1.00.04'
+    implementation 'com.github.AvielZaman:LocationAnalytics-SDK:1.00.00'
     // Other dependencies
 }
 ```
@@ -107,7 +107,7 @@ dependencyResolutionManagement {
 
 ```kotlin
 dependencies {
-    implementation("com.github.AvielZaman:Location-Analytics-SDK:1.00.04")
+    implementation("com.github.AvielZaman:LocationAnalytics-SDK:1.00.00")
     // Other dependencies
 }
 ```
@@ -835,14 +835,7 @@ The dashboard is served by the server and doesn't require separate deployment.
 
 ## Release Notes
 
-### Version 1.00.04 (May 2025)
-
-- Latest stable release
-- Improved JitPack integration
-- Enhanced deployment documentation
-- Bug fixes and performance improvements
-
-### Version 1.0.0 (May 2025)
+### Version 1.0.0 (June 2025)
 
 - Initial release
 - Android SDK with location tracking and statistics
